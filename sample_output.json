@@ -1,0 +1,161 @@
+{
+  "project_plan": [
+    {
+      "milestone": "Understand the Assignment",
+      "tasks": [
+        "Read the full assignment prompt carefully",
+        "Identify the required sections: intro, background, 3 causes, 3 impacts, mitigation strategies, summary",
+        "Review the rubric criteria and note what is being assessed",
+        "Clarify any terms or concepts you're unsure about (e.g., 'local ecosystems')"
+      ],
+      "estimated_time_days": 1
+    },
+    {
+      "milestone": "Research & Evidence Gathering",
+      "tasks": [
+        "Search for credible sources on climate change causes (e.g., greenhouse gases, deforestation, industrial emissions)",
+        "Find data/examples of climate change impacts on local ecosystems (e.g., biodiversity loss, habitat change)",
+        "Research at least 3 mitigation strategies with evidence",
+        "Collect source details (author, year, title, URL/publication) for citations",
+        "Organise notes by section"
+      ],
+      "estimated_time_days": 4
+    },
+    {
+      "milestone": "Draft the Report Outline",
+      "tasks": [
+        "Map your notes to each required section",
+        "Write one-sentence summaries for each section to check coverage",
+        "Confirm you have 3 distinct causes and 3 distinct impacts identified",
+        "Share outline with a teacher or peer for quick feedback"
+      ],
+      "estimated_time_days": 1
+    },
+    {
+      "milestone": "Write the First Draft",
+      "tasks": [
+        "Write the Introduction (context + thesis statement)",
+        "Write the Background section (overview of climate change)",
+        "Write Cause 1, Cause 2, Cause 3 with supporting evidence",
+        "Write Impact 1, Impact 2, Impact 3 with examples specific to local ecosystems",
+        "Write Mitigation Strategies section",
+        "Write the Conclusion/Summary"
+      ],
+      "estimated_time_days": 3
+    },
+    {
+      "milestone": "Review, Edit & Finalise",
+      "tasks": [
+        "Check all 6 required sections are present and complete",
+        "Proofread for grammar, spelling, and sentence clarity",
+        "Ensure logical flow between sections",
+        "Add or verify in-text citations and a reference list",
+        "Cross-check each rubric criterion",
+        "Produce final formatted version"
+      ],
+      "estimated_time_days": 2
+    }
+  ],
+  "report_outline": [
+    {
+      "section": "1. Introduction",
+      "subsections": [
+        "Brief overview of climate change as a global issue",
+        "Importance of studying impacts on local ecosystems",
+        "Thesis statement outlining what the report covers"
+      ]
+    },
+    {
+      "section": "2. Background",
+      "subsections": [
+        "Definition of climate change",
+        "Historical context (pre-industrial vs. current trends)",
+        "Overview of how local ecosystems are connected to global climate systems"
+      ]
+    },
+    {
+      "section": "3. Causes of Climate Change",
+      "subsections": [
+        "Cause 1: Greenhouse gas emissions (fossil fuels, transport)",
+        "Cause 2: Deforestation and land-use change",
+        "Cause 3: Agricultural practices and livestock emissions"
+      ]
+    },
+    {
+      "section": "4. Impacts on Local Ecosystems",
+      "subsections": [
+        "Impact 1: Loss of biodiversity and species extinction risk",
+        "Impact 2: Habitat disruption (e.g., coral bleaching, forest die-off)",
+        "Impact 3: Changes to water availability and aquatic ecosystems"
+      ]
+    },
+    {
+      "section": "5. Mitigation Strategies",
+      "subsections": [
+        "Strategy 1: Renewable energy adoption",
+        "Strategy 2: Reforestation and conservation programs",
+        "Strategy 3: Sustainable agriculture and land management"
+      ]
+    },
+    {
+      "section": "6. Summary / Conclusion",
+      "subsections": [
+        "Recap of the three main causes",
+        "Recap of the three key ecosystem impacts",
+        "Final thoughts on the urgency of mitigation"
+      ]
+    }
+  ],
+  "tutor_guidance": {
+    "clarifying_questions": [
+      "Which specific local ecosystem are you focusing on (e.g., a forest, wetland, coastal area, urban green space in your region)?",
+      "Are your three causes meant to be global-level causes of climate change, or specifically how local human activities drive it?",
+      "Do you need to include real data/statistics, or is a general explanation sufficient for this assignment?",
+      "Are you expected to use formal citations (e.g., APA, Harvard), and if so, has your teacher specified a citation style?",
+      "What is the required word count or page length for the final report?"
+    ],
+    "what_to_do_next": [
+      "Start by choosing your specific local ecosystem — this will make your impacts section much more concrete and easier to research.",
+      "Open a blank document and write the 6 section headings from your outline — this gives you an instant starting structure.",
+      "Set a research timer: spend 30 minutes finding one source for each of your 3 causes and 3 impacts before writing anything.",
+      "Write your Background section first — it's the easiest and will warm you up before tackling the analysis sections."
+    ],
+    "improvement_tips": [
+      "Be specific about 'local' — generic statements about global climate change will not score as well as examples tied to a named local ecosystem or region.",
+      "Use a linking sentence at the end of each section to connect it to the next (e.g., 'These causes directly contribute to the impacts explored in Section 4.').",
+      "For each cause and impact, follow a simple structure: state the point → explain the mechanism → give a real-world example → cite your source.",
+      "Even if citations are not strictly required, adding 2-3 credible sources will strengthen your report and demonstrate research skills.",
+      "Read your draft aloud before submitting — it's the fastest way to catch awkward phrasing and grammar errors."
+    ]
+  },
+  "quality_checklist": [
+    {
+      "item": "All required sections are present: Introduction, Background, 3 Causes, 3 Impacts, Mitigation Strategies, Summary",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "Causes of climate change are clearly explained with supporting reasoning or evidence",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "Impacts on local ecosystems are clearly explained with specific examples",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "At least 3 mitigation strategies are described and explained",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "The report has a logical flow: each section connects naturally to the next",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "Grammar and spelling are correct throughout the report",
+      "meets_requirement": "unknown"
+    },
+    {
+      "item": "Sources are cited appropriately, or a note is included if no citations are provided",
+      "meets_requirement": "unknown"
+    }
+  ]
+}

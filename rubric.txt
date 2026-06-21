@@ -1,0 +1,5 @@
+Rubric: The report should (1) include all required sections, 
+(2) clearly explain causes and impacts, 
+(3) provide mitigation strategies, 
+(4) has logical flow and correct grammar, 
+(5) appropriate citation of sources if used (if no citations are provided, mark as unknown).
