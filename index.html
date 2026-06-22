@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Student Tutor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #534AB7;
+    --primary-light: #EEEDFE;
+    --primary-mid: #AFA9EC;
+    --primary-dark: #3C3489;
+    --primary-deep: #26215C;
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --teal-mid: #5DCAA5;
+    --amber: #854F0B;
+    --amber-light: #FAEEDA;
+    --amber-mid: #EF9F27;
+    --coral: #993C1D;
+    --coral-light: #FAECE7;
+    --coral-mid: #F0997B;
+    --success: #1D9E75;
+    --success-light: #E1F5EE;
+    --danger: #E24B4A;
+    --danger-light: #FCEBEB;
+    --bg: #F7F6FF;
+    --surface: #FFFFFF;
+    --text: #1A1830;
+    --text-sec: #5A5780;
+    --text-ter: #9896B8;
+    --border: rgba(83,74,183,0.12);
+    --border-med: rgba(83,74,183,0.25);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 999px;
+  }
+
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .screen { display: none; flex: 1; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── Auth screens ── */
+  .auth-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 24px; min-height: 100vh;
+  }
+  .auth-card {
+    background: var(--surface); border-radius: var(--radius-xl);
+    border: 1px solid var(--border); padding: 40px 36px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 4px 40px rgba(83,74,183,0.08);
+  }
+  .auth-logo {
+    width: 64px; height: 64px; border-radius: 18px;
+    background: var(--primary-light); display: flex; align-items: center;
+    justify-content: center; font-size: 28px; margin: 0 auto 16px;
+  }
+  .auth-eyebrow {
+    text-align: center; font-size: 10px; font-weight: 700;
+    letter-spacing: 1.4px; text-transform: uppercase; color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .auth-title {
+    text-align: center; font-size: 26px; font-weight: 800;
+    color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px;
+  }
+  .auth-sub {
+    text-align: center; font-size: 14px; color: var(--text-sec);
+    line-height: 1.6; margin-bottom: 28px;
+  }
+
+  /* ── Form elements ── */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    font-size: 15px; color: var(--text); font-family: inherit;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(83,74,183,0.12);
+    background: var(--surface);
+  }
+  .field textarea { height: 110px; resize: vertical; line-height: 1.5; }
+  .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239896B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field .opt-label { font-size: 10px; color: var(--text-ter); font-weight: 500; margin-left: 4px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px 20px; border-radius: var(--radius-md);
+    font-size: 15px; font-weight: 700; cursor: pointer; border: none;
+    font-family: inherit; transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.1px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-outline:hover:not(:disabled) { background: var(--primary-light); }
+  .btn-ghost { background: var(--primary-light); color: var(--primary); }
+  .btn-ghost:hover:not(:disabled) { background: var(--primary-mid); color: var(--primary-deep); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; }
+
+  /* ── Error / success ── */
+  .error-box {
+    background: var(--danger-light); border: 1px solid #F7C1C1;
+    border-radius: var(--radius-md); padding: 12px 14px;
+    font-size: 13px; color: var(--danger); margin-bottom: 16px; display: none;
+    line-height: 1.5;
+  }
+  .error-box.show { display: block; }
+
+  .link-row { text-align: center; margin-top: 16px; font-size: 14px; color: var(--text-sec); }
+  .link-row a { color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: none; }
+
+  /* ── Top nav ── */
+  .nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; align-items: center;
+    justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .nav-logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .nav-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; }
+  .user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .logout-btn { font-size: 13px; color: var(--text-ter); cursor: pointer; background: none; border: none; font-family: inherit; padding: 6px 10px; border-radius: var(--radius-sm); transition: background 0.15s; }
+  .logout-btn:hover { background: var(--bg); color: var(--text-sec); }
+
+  /* ── Home screen ── */
+  .home-body { flex: 1; padding: 40px 32px; max-width: 960px; margin: 0 auto; width: 100%; }
+  .hero-section { text-align: center; margin-bottom: 48px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary-light); color: var(--primary);
+    font-size: 12px; font-weight: 700; padding: 5px 12px;
+    border-radius: var(--radius-full); margin-bottom: 16px; letter-spacing: 0.3px;
+  }
+  .hero-h1 { font-size: 42px; font-weight: 900; color: var(--text); line-height: 1.15; letter-spacing: -1px; margin-bottom: 14px; }
+  .hero-h1 span { color: var(--primary); }
+  .hero-p { font-size: 17px; color: var(--text-sec); line-height: 1.6; max-width: 520px; margin: 0 auto 28px; }
+  .hero-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 30px; border-radius: var(--radius-md); font-size: 16px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s, transform 0.1s; }
+  .hero-cta:hover { opacity: 0.88; }
+  .hero-cta:active { transform: scale(0.98); }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+  .feature-card { border-radius: var(--radius-lg); padding: 20px; }
+  .feature-icon { font-size: 24px; margin-bottom: 10px; }
+  .feature-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .feature-desc { font-size: 12px; opacity: 0.75; font-weight: 500; }
+
+  .tips-card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    border: 1px solid var(--border); padding: 24px; margin-bottom: 20px;
+  }
+  .tips-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-sec); margin-bottom: 16px; }
+  .tip-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .tip-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .tip-text { font-size: 14px; color: var(--text-sec); line-height: 1.5; padding-top: 3px; }
+
+  /* ── Form screen ── */
+  .form-body { flex: 1; padding: 32px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .page-back { display: flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; font-size: 14px; cursor: pointer; background: none; border: none; font-family: inherit; margin-bottom: 24px; padding: 0; }
+  .page-back:hover { opacity: 0.75; }
+  .page-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 8px; }
+  .page-title { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: var(--text-sec); margin-bottom: 28px; line-height: 1.5; }
+
+  .form-card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 28px; margin-bottom: 16px; }
+  .form-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-ter); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ── Loading ── */
+  .loading-screen {
+    position: fixed; inset: 0; background: rgba(247,246,255,0.96);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; z-index: 999;
+  }
+  .loading-screen.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px; border: 3px solid var(--primary-light);
+    border-top-color: var(--primary); border-radius: 50%;
+    animation: spin 0.75s linear infinite; margin-bottom: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .loading-sub { font-size: 14px; color: var(--text-sec); }
+  .loading-dots::after { content: ''; animation: dots 1.4s steps(4,end) infinite; }
+  @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+
+  /* ── Results screen ── */
+  .results-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .results-header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 20px 32px 0;
+  }
+  .results-title { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px; }
+  .results-meta { font-size: 13px; color: var(--text-sec); margin-bottom: 16px; }
+
+  .tab-bar { display: flex; gap: 4px; overflow-x: auto; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 10px 18px; border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: 14px; font-weight: 600; cursor: pointer; background: none;
+    border: 1px solid transparent; border-bottom: none; color: var(--text-sec);
+    font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    position: relative; bottom: -1px;
+  }
+  .tab-btn:hover { background: var(--bg); color: var(--text); }
+  .tab-btn.active { background: var(--bg); color: var(--primary); border-color: var(--border); font-weight: 700; }
+
+  .results-content { flex: 1; overflow-y: auto; padding: 28px 32px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Plan tab ── */
+  .milestone-card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    border: 1px solid var(--border); padding: 20px; margin-bottom: 14px;
+  }
+  .milestone-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .milestone-left { display: flex; align-items: center; gap: 12px; }
+  .milestone-num { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .milestone-name { font-size: 16px; font-weight: 700; color: var(--text); }
+  .badge { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; }
+  .badge-teal { background: var(--teal-light); color: var(--teal); }
+  .badge-purple { background: var(--primary-light); color: var(--primary-dark); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-coral { background: var(--coral-light); color: var(--coral); }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+  .task-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-sec); line-height: 1.5; }
+  .task-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary-mid); margin-top: 6px; flex-shrink: 0; }
+
+  /* ── Outline tab ── */
+  .outline-card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; }
+  .outline-section { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .outline-section:last-child { border-bottom: none; }
+  .outline-section-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+  .subsection-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .subsection-bar { width: 3px; border-radius: 2px; background: var(--primary-light); flex-shrink: 0; align-self: stretch; min-height: 18px; }
+  .subsection-text { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
+
+  /* ── Guidance tab ── */
+  .guidance-group { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px; margin-bottom: 14px; }
+  .guidance-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .guidance-icon { font-size: 20px; }
+  .guidance-group-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .guidance-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--bg); border-radius: var(--radius-md); margin-bottom: 8px; font-size: 14px; color: var(--text-sec); line-height: 1.5; }
+  .guidance-item:last-child { margin-bottom: 0; }
+  .guidance-item-num { font-size: 11px; font-weight: 800; color: var(--primary); min-width: 18px; padding-top: 1px; }
+
+  /* ── Checklist tab ── */
+  .checklist-card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; }
+  .checklist-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item:hover { background: var(--bg); }
+  .check-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+  .check-yes { background: var(--success-light); color: var(--success); }
+  .check-no { background: var(--danger-light); color: var(--danger); }
+  .check-unknown { background: var(--primary-light); color: var(--primary); }
+  .checklist-text { font-size: 14px; color: var(--text); line-height: 1.5; flex: 1; }
+
+  /* ── Summary bar ── */
+  .summary-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; flex: 1; }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .stat-label { font-size: 12px; color: var(--text-sec); margin-top: 2px; font-weight: 500; }
+
+  .results-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .results-actions .btn { flex: 1; }
+
+  /* ── Empty state ── */
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+  .empty-icon { font-size: 56px; margin-bottom: 16px; }
+  .empty-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .empty-text { font-size: 15px; color: var(--text-sec); line-height: 1.6; max-width: 360px; margin-bottom: 24px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .feature-grid { grid-template-columns: 1fr 1fr; }
+    .home-body, .form-body, .results-content { padding: 20px 16px; }
+    .hero-h1 { font-size: 30px; }
+    .form-row { grid-template-columns: 1fr; }
+    .nav { padding: 0 16px; }
+    .summary-bar { flex-wrap: wrap; }
+    .results-header { padding: 16px 16px 0; }
+    .results-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <div class="loading-title">Generating your plan<span class="loading-dots"></span></div>
+  <div class="loading-sub">The AI tutor is reading your assignment</div>
+</div>
+
+<div class="app" id="app">
+
+  <!-- ══════════════ LOGIN ══════════════ -->
+  <div class="screen active" id="screen-login">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-logo">🎓</div>
+        <div class="auth-eyebrow">AI Student Tutor</div>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">Sign in to plan your assignments with AI guidance.</p>
+
+        <div class="error-box" id="login-error"></div>
+
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary" id="login-btn" onclick="handleLogin()" style="margin-top:4px">Sign in</button>
+        <div class="link-row">Don't have an account? <a onclick="showScreen('register')">Create one</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ REGISTER ══════════════ -->
+  <div class="screen" id="screen-register">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-logo">🎓</div>
+        <div class="auth-eyebrow">AI Student Tutor</div>
+        <h1 class="auth-title">Create account</h1>
+        <p class="auth-sub">Start planning your assignments smarter, not harder.</p>
+
+        <div class="error-box" id="reg-error"></div>
+
+        <div class="field">
+          <label for="reg-name">Full name</label>
+          <input type="text" id="reg-name" placeholder="Jane Doe" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" placeholder="At least 8 characters" autocomplete="new-password" />
+        </div>
+        <button class="btn btn-primary" id="reg-btn" onclick="handleRegister()" style="margin-top:4px">Create account</button>
+        <div class="link-row">Already have an account? <a onclick="showScreen('login')">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ HOME ══════════════ -->
+  <div class="screen" id="screen-home">
+    <nav class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo">🎓</div>
+        <span class="nav-title">AI Student Tutor</span>
+      </div>
+      <div class="nav-right">
+        <div class="avatar" id="nav-avatar">?</div>
+        <span class="user-name" id="nav-name">Student</span>
+        <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+      </div>
+    </nav>
+    <div class="home-body">
+      <div class="hero-section">
+        <div class="hero-badge">✨ AI-powered academic tutor</div>
+        <h1 class="hero-h1">Turn any assignment<br/>into a <span>clear action plan</span></h1>
+        <p class="hero-p">Paste your prompt, get a personalised project plan, structured outline, and tutor guidance — in seconds.</p>
+        <button class="hero-cta" onclick="showScreen('form')">Start my assignment →</button>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card" style="background:var(--primary-light)">
+          <div class="feature-icon">📋</div>
+          <div class="feature-title" style="color:var(--primary-dark)">Project plan</div>
+          <div class="feature-desc" style="color:var(--primary-dark)">Milestones & timeline</div>
+        </div>
+        <div class="feature-card" style="background:var(--teal-light)">
+          <div class="feature-icon">📄</div>
+          <div class="feature-title" style="color:var(--teal)">Report outline</div>
+          <div class="feature-desc" style="color:var(--teal)">Structure & sections</div>
+        </div>
+        <div class="feature-card" style="background:var(--amber-light)">
+          <div class="feature-icon">💬</div>
+          <div class="feature-title" style="color:var(--amber)">Tutor guidance</div>
+          <div class="feature-desc" style="color:var(--amber)">Questions & next steps</div>
+        </div>
+        <div class="feature-card" style="background:var(--coral-light)">
+          <div class="feature-icon">✅</div>
+          <div class="feature-title" style="color:var(--coral)">Checklist</div>
+          <div class="feature-desc" style="color:var(--coral)">Rubric-aligned review</div>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <div class="tips-title">Tips for best results</div>
+        <div class="tip-row"><div class="tip-num">01</div><div class="tip-text">Paste your <strong>full assignment prompt</strong> for the most accurate guidance</div></div>
+        <div class="tip-row"><div class="tip-num">02</div><div class="tip-text">Add your <strong>rubric</strong> to get a checklist tailored to your grade criteria</div></div>
+        <div class="tip-row"><div class="tip-num">03</div><div class="tip-text">Set a <strong>deadline</strong> and the plan will space milestones across your timeline</div></div>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--text-ter)">🔒 Your assignment prompt is never stored on our servers</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ FORM ══════════════ -->
+  <div class="screen" id="screen-form">
+    <nav class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo">🎓</div>
+        <span class="nav-title">AI Student Tutor</span>
+      </div>
+      <div class="nav-right">
+        <div class="avatar" id="form-nav-avatar">?</div>
+        <span class="user-name" id="form-nav-name">Student</span>
+        <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+      </div>
+    </nav>
+    <div class="form-body">
+      <button class="page-back" onclick="showScreen('home')">← Back to home</button>
+      <div class="page-eyebrow">New assignment</div>
+      <h2 class="page-title">Tell us about your assignment</h2>
+      <p class="page-sub">Fill in your assignment details below. The more context you give, the better your plan will be.</p>
+
+      <div class="error-box" id="form-error"></div>
+
+      <div class="form-card">
+        <div class="form-section-title">Assignment</div>
+        <div class="field">
+          <label for="form-prompt">Assignment prompt <span style="color:var(--danger)">*</span></label>
+          <textarea id="form-prompt" placeholder="e.g. Write a report explaining the causes and impacts of climate change on local ecosystems. Include an introduction, background, 3 causes, 3 impacts, and mitigation strategies..."></textarea>
+        </div>
+        <div class="field">
+          <label for="form-rubric">Rubric <span class="opt-label">(optional)</span></label>
+          <textarea id="form-rubric" placeholder="Paste your rubric or marking criteria here..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-section-title">Context</div>
+        <div class="form-row">
+          <div class="field">
+            <label for="form-grade">Grade level <span class="opt-label">(optional)</span></label>
+            <input type="text" id="form-grade" placeholder="e.g. Grade 10, University Year 2" />
+          </div>
+          <div class="field">
+            <label for="form-deadline">Deadline <span class="opt-label">(optional)</span></label>
+            <input type="text" id="form-deadline" placeholder="e.g. 2 weeks, June 30" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="form-type">Report type <span class="opt-label">(optional)</span></label>
+          <select id="form-type">
+            <option value="">Select a type...</option>
+            <option value="research report">Research report</option>
+            <option value="lab report">Lab report</option>
+            <option value="essay">Essay</option>
+            <option value="case study">Case study</option>
+            <option value="literature review">Literature review</option>
+            <option value="business report">Business report</option>
+            <option value="reflective journal">Reflective journal</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="form-btn" onclick="handleSubmit()">Generate my plan →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ RESULTS ══════════════ -->
+  <div class="screen" id="screen-results">
+    <nav class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo">🎓</div>
+        <span class="nav-title">AI Student Tutor</span>
+      </div>
+      <div class="nav-right">
+        <button class="btn btn-sm btn-ghost" onclick="showScreen('form')">New assignment</button>
+        <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+      </div>
+    </nav>
+    <div class="results-body">
+      <div class="results-header">
+        <button class="page-back" style="margin-bottom:10px" onclick="showScreen('home')">← Home</button>
+        <div class="results-title">Your tutor guidance</div>
+        <div class="results-meta" id="results-meta">Generated just now</div>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('plan', this)">📋 Project plan</button>
+          <button class="tab-btn" onclick="switchTab('outline', this)">📄 Report outline</button>
+          <button class="tab-btn" onclick="switchTab('guidance', this)">💬 Tutor guidance</button>
+          <button class="tab-btn" onclick="switchTab('checklist', this)">✅ Checklist</button>
+        </div>
+      </div>
+
+      <div class="results-content">
+        <!-- Summary bar -->
+        <div class="summary-bar" id="summary-bar"></div>
+
+        <!-- Plan tab -->
+        <div class="tab-panel active" id="tab-plan"></div>
+
+        <!-- Outline tab -->
+        <div class="tab-panel" id="tab-outline"></div>
+
+        <!-- Guidance tab -->
+        <div class="tab-panel" id="tab-guidance"></div>
+
+        <!-- Checklist tab -->
+        <div class="tab-panel" id="tab-checklist"></div>
+
+        <div class="results-actions">
+          <button class="btn btn-outline" onclick="showScreen('form')">New assignment</button>
+          <button class="btn btn-ghost" onclick="showScreen('home')">Back to home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+const API = 'https://ai-student-tutor-project-app.vercel.app';
+let session = null;
+
+// ── Screen routing ─────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loadingScreen').classList.toggle('show', on);
+}
+
+// ── Errors ─────────────────────────────────────────────────────────────────
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+}
+function clearErr(id) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.classList.remove('show');
+}
+
+// ── Session ────────────────────────────────────────────────────────────────
+function saveSession(token, user) {
+  session = { token, user };
+  localStorage.setItem('session', JSON.stringify(session));
+}
+function loadSession() {
+  try { session = JSON.parse(localStorage.getItem('session')); } catch { session = null; }
+  return session;
+}
+function clearSession() {
+  session = null;
+  localStorage.removeItem('session');
+}
+function updateNavUser() {
+  if (!session) return;
+  const initials = session.user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  ['nav-avatar', 'form-nav-avatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = initials;
+  });
+  ['nav-name', 'form-nav-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = session.user.name;
+  });
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function handleLogin() {
+  clearErr('login-error');
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showErr('login-error', 'Please enter your email and password.'); return; }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const res = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Login failed. Check your email and password.');
+    saveSession(data.access_token, data.user);
+    updateNavUser();
+    showScreen('home');
+  } catch (e) {
+    showErr('login-error', e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function handleRegister() {
+  clearErr('reg-error');
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!name || !email || !password) { showErr('reg-error', 'Please fill in all fields.'); return; }
+  if (password.length < 8) { showErr('reg-error', 'Password must be at least 8 characters.'); return; }
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  try {
+    const res = await fetch(API + '/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Registration failed.');
+    saveSession(data.access_token, data.user);
+    updateNavUser();
+    showScreen('home');
+  } catch (e) {
+    showErr('reg-error', e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create account';
+  }
+}
+
+function handleLogout() {
+  clearSession();
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  showScreen('login');
+}
+
+// ── Form submit ────────────────────────────────────────────────────────────
+async function handleSubmit() {
+  clearErr('form-error');
+  const prompt = document.getElementById('form-prompt').value.trim();
+  if (!prompt) { showErr('form-error', 'Assignment prompt is required.'); return; }
+  if (!session) { showScreen('login'); return; }
+
+  const btn = document.getElementById('form-btn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  setLoading(true);
+
+  try {
+    const fd = new FormData();
+    fd.append('assignment_prompt', prompt);
+    const rubric   = document.getElementById('form-rubric').value.trim();
+    const grade    = document.getElementById('form-grade').value.trim();
+    const deadline = document.getElementById('form-deadline').value.trim();
+    const type     = document.getElementById('form-type').value;
+    if (rubric)   fd.append('rubric_text', rubric);
+    if (grade)    fd.append('grade_level', grade);
+    if (deadline) fd.append('deadline', deadline);
+    if (type)     fd.append('report_type', type);
+
+    const res = await fetch(API + '/tutor/generate', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + session.token },
+      body: fd
+    });
+
+    if (res.status === 401) {
+      clearSession();
+      showScreen('login');
+      throw new Error('Session expired — please sign in again.');
+    }
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'The server returned an error.');
+
+    renderResults(data);
+    showScreen('results');
+  } catch (e) {
+    showErr('form-error', e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate my plan →';
+    setLoading(false);
+  }
+}
+
+// ── Render results ─────────────────────────────────────────────────────────
+function renderResults(data) {
+  const now = new Date();
+  document.getElementById('results-meta').textContent =
+    'Generated at ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Summary bar
+  const totalDays = (data.project_plan || []).reduce((s, m) => s + (m.estimated_time_days || 0), 0);
+  document.getElementById('summary-bar').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${(data.project_plan||[]).length}</div><div class="stat-label">Milestones</div></div>
+    <div class="stat-card"><div class="stat-num">${totalDays}</div><div class="stat-label">Estimated days</div></div>
+    <div class="stat-card"><div class="stat-num">${(data.report_outline||[]).length}</div><div class="stat-label">Report sections</div></div>
+    <div class="stat-card"><div class="stat-num">${(data.quality_checklist||[]).length}</div><div class="stat-label">Checklist items</div></div>
+  `;
+
+  // ── Plan ──
+  const badgeColors = ['badge-purple','badge-teal','badge-amber','badge-coral','badge-purple','badge-teal'];
+  document.getElementById('tab-plan').innerHTML = (data.project_plan || []).map((m, i) => `
+    <div class="milestone-card">
+      <div class="milestone-header">
+        <div class="milestone-left">
+          <div class="milestone-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="milestone-name">${esc(m.milestone)}</div>
+        </div>
+        <span class="badge ${badgeColors[i % badgeColors.length]}">${m.estimated_time_days} day${m.estimated_time_days !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="divider"></div>
+      <div class="task-list">
+        ${(m.tasks||[]).map(t => `<div class="task-item"><div class="task-dot"></div><span>${esc(t)}</span></div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  // ── Outline ──
+  document.getElementById('tab-outline').innerHTML = `
+    <div class="outline-card">
+      ${(data.report_outline||[]).map(s => `
+        <div class="outline-section">
+          <div class="outline-section-title">${esc(s.section)}</div>
+          ${(s.subsections||[]).map(sub => `
+            <div class="subsection-item">
+              <div class="subsection-bar"></div>
+              <div class="subsection-text">${esc(sub)}</div>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+
+  // ── Guidance ──
+  const g = data.tutor_guidance || {};
+  const groups = [
+    { icon: '❓', title: 'Clarifying questions', items: g.clarifying_questions || [] },
+    { icon: '👉', title: 'What to do next',      items: g.what_to_do_next || [] },
+    { icon: '💡', title: 'Improvement tips',     items: g.improvement_tips || [] },
+  ];
+  document.getElementById('tab-guidance').innerHTML = groups.map(gr => `
+    <div class="guidance-group">
+      <div class="guidance-group-header">
+        <span class="guidance-icon">${gr.icon}</span>
+        <span class="guidance-group-title">${gr.title}</span>
+      </div>
+      ${gr.items.map((item, i) => `
+        <div class="guidance-item">
+          <span class="guidance-item-num">${i+1}.</span>
+          <span>${esc(item)}</span>
+        </div>`).join('')}
+    </div>`).join('');
+
+  // ── Checklist ──
+  const checkMap = {
+    yes:     { cls: 'check-yes',     icon: '✓' },
+    no:      { cls: 'check-no',      icon: '✗' },
+    unknown: { cls: 'check-unknown', icon: '?' },
+  };
+  document.getElementById('tab-checklist').innerHTML = `
+    <div class="checklist-card">
+      ${(data.quality_checklist||[]).map(c => {
+        const cfg = checkMap[c.meets_requirement] || checkMap.unknown;
+        return `<div class="checklist-item">
+          <div class="check-icon ${cfg.cls}">${cfg.icon}</div>
+          <div class="checklist-text">${esc(c.item)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // Reset to first tab
+  switchTab('plan', document.querySelector('#screen-results .tab-btn'));
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('#screen-results .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Escape HTML ────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Enter key on auth inputs ───────────────────────────────────────────────
+document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('reg-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+
+// ── Boot: check for existing session ──────────────────────────────────────
+(function boot() {
+  const s = loadSession();
+  if (s && s.token) {
+    updateNavUser();
+    showScreen('home');
+  }
+})();
+</script>
+</body>
+</html>
