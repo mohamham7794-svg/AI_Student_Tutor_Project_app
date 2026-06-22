@@ -1,26 +1,136 @@
 """
 Student Project AI Tutor — FastAPI + Gemini (Google AI Studio)
 POST /tutor/generate
+POST /auth/register
+POST /auth/login
 """
 
 import json
 import os
 import re
+import sqlite3
+from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from google import genai
-from pydantic import BaseModel, ValidationError
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel, EmailStr, ValidationError
 from typing import Optional
 
 load_dotenv()
 
 # ---------------------------------------------------------------------------
+# Auth setup
+# ---------------------------------------------------------------------------
+# NOTE: Vercel's filesystem is read-only EXCEPT for /tmp. Writing anywhere
+# else (e.g. a relative "users.db" path) crashes the function immediately on
+# cold start. /tmp is writable but ALSO wiped between cold starts, so this
+# still won't give you real persistence — see the README/chat note about
+# migrating to a hosted DB (e.g. Supabase) for production.
+DB_PATH = os.getenv("DB_PATH", "/tmp/users.db")
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET is not set in .env or environment variables.")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
+
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            hashed_password TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+init_db()
+
+
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: sqlite3.Connection = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if token is None:
+        raise credentials_exception
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = db.execute("SELECT id, name, email FROM users WHERE email = ?", (email,)).fetchone()
+    if user is None:
+        raise credentials_exception
+    return dict(user)
+
+
+# ---------------------------------------------------------------------------
+# Auth schemas
+# ---------------------------------------------------------------------------
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    name: str
+    email: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+# ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="AI Student Tutor",
+    title="Student Project AI Tutor",
     description=(
         "An AI-powered tutor that helps students plan and structure their assignments. "
         "Provide an assignment prompt (and optional rubric) to receive a project plan, "
@@ -211,6 +321,7 @@ async def generate_tutor_output(
     grade_level: Optional[str] = Form(None, description="e.g. 'Grade 10', 'University Year 2'"),
     deadline: Optional[str] = Form(None, description="e.g. '2 weeks', 'June 30 2025'"),
     report_type: Optional[str] = Form(None, description="e.g. 'research report', 'lab report'"),
+    current_user: dict = Depends(get_current_user),
 ):
     # Handle rubric_file upload
     if rubric_file is not None:
@@ -250,6 +361,60 @@ async def generate_tutor_output(
         )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Auth endpoints
+# ---------------------------------------------------------------------------
+@app.post(
+    "/auth/register",
+    response_model=TokenResponse,
+    summary="Register a new user account",
+)
+def register(payload: RegisterRequest, db: sqlite3.Connection = Depends(get_db)):
+    existing = db.execute("SELECT id FROM users WHERE email = ?", (payload.email,)).fetchone()
+    if existing:
+        raise HTTPException(status_code=400, detail="An account with this email already exists.")
+
+    hashed_password = pwd_context.hash(payload.password)
+    cursor = db.execute(
+        "INSERT INTO users (name, email, hashed_password, created_at) VALUES (?, ?, ?, ?)",
+        (payload.name, payload.email, hashed_password, datetime.now(timezone.utc).isoformat()),
+    )
+    db.commit()
+    user_id = cursor.lastrowid
+
+    token = create_access_token({"sub": payload.email})
+    return TokenResponse(
+        access_token=token,
+        user=UserOut(id=user_id, name=payload.name, email=payload.email),
+    )
+
+
+@app.post(
+    "/auth/login",
+    response_model=TokenResponse,
+    summary="Log in with email and password",
+)
+def login(payload: LoginRequest, db: sqlite3.Connection = Depends(get_db)):
+    user = db.execute("SELECT * FROM users WHERE email = ?", (payload.email,)).fetchone()
+    if not user or not pwd_context.verify(payload.password, user["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Incorrect email or password.")
+
+    token = create_access_token({"sub": user["email"]})
+    return TokenResponse(
+        access_token=token,
+        user=UserOut(id=user["id"], name=user["name"], email=user["email"]),
+    )
+
+
+@app.get(
+    "/auth/me",
+    response_model=UserOut,
+    summary="Get the currently authenticated user",
+)
+def get_me(current_user: dict = Depends(get_current_user)):
+    return UserOut(**current_user)
 
 
 # ---------------------------------------------------------------------------
