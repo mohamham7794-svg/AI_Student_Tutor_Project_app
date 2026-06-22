@@ -5,9 +5,10 @@
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "main.py" },
-    { "src": "/auth/(.*)", "dest": "main.py" },
-    { "src": "/tutor/(.*)", "dest": "main.py" },
+    { "src": "/auth/register", "dest": "main.py" },
+    { "src": "/auth/login", "dest": "main.py" },
+    { "src": "/auth/me", "dest": "main.py" },
+    { "src": "/tutor/generate", "dest": "main.py" },
     { "src": "/docs", "dest": "main.py" },
     { "src": "/openapi.json", "dest": "main.py" },
     { "src": "/(.*)", "dest": "index.html" }
